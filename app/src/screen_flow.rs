@@ -70,6 +70,14 @@ impl Default for ScreenFlow {
 }
 
 impl ScreenFlow {
+    fn screen(&mut self, kind: Kind) -> &dyn Screen {
+        self.screens
+            .iter_mut()
+            .find(|s| s.kind() == kind)
+            .map(|s| &**s)
+            .unwrap_or_else(|| panic!("Screen with given kind not found: {}", kind))
+    }
+
     fn screen_mut(&mut self, kind: Kind) -> &mut dyn Screen {
         self.screens
             .iter_mut()
@@ -135,6 +143,10 @@ impl ScreenFlow {
         handled
     }
 
+    pub fn update(&mut self, state: State) {
+        self.screen_mut(self.current_screen_kind).update(state);
+    }
+
     pub fn display(&mut self, state: State, frame: &mut Frame) {
         let [top_area, body] =
             Layout::vertical([Constraint::Length(1), Constraint::Min(0)]).areas(frame.area());
@@ -153,7 +165,7 @@ impl ScreenFlow {
         frame.render_widget(top_bar, top_area);
 
         if !self
-            .screen_mut(self.current_screen_kind)
+            .screen(self.current_screen_kind)
             .display(state, frame, body)
         {
             // Screen display is finished, move to next screen

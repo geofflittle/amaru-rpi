@@ -53,6 +53,7 @@ impl App {
             startup,
             self.connectivity_cache.last_result,
         );
+        self.screen_flow.update(state);
         self.screen_flow.display(state, frame);
     }
 }
