@@ -1,3 +1,4 @@
+pub mod app;
 pub mod backends;
 pub mod button;
 pub mod cli;
