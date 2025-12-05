@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 #[cfg(not(feature = "display_hat"))]
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{cmp::Ordering, fmt, str::FromStr};
+use tracing::warn;
 
 #[cfg(feature = "display_hat")]
 use std::{
@@ -216,17 +217,37 @@ impl JournalReader {
 }
 
 pub fn extract_json(line: &str) -> Option<LogEntry> {
-    let json_part = line.find('{').map(|i| &line[i..])?;
-    serde_json::from_str(json_part).unwrap()
+    let json_start = line.find('{');
+    if json_start.is_none() {
+        return None;
+    }
+
+    let json_part = &line[json_start.unwrap()..];
+    match serde_json::from_str(json_part) {
+        Ok(entry) => Some(entry),
+        Err(e) => {
+            warn!("JSON Parse Error: {} in '{}'", e, json_part);
+            None
+        }
+    }
 }
 
 pub fn extract_tip_changed(line: &str) -> Option<u64> {
     let entry = extract_json(line)?;
-    if let Some(fields) = entry.fields
-        && fields.message == "tip_changed"
-        && let Some(tip) = fields.tip
-        && let Some(slot_str) = tip.split('.').next()
-    {
+    let Some(fields) = entry.fields else {
+        return None;
+    };
+    // Handles old "tip_changed" message using "tip" field and new
+    // "diffusion.forward_chain.new_tip" message using "point" field
+    if fields.message == "tip_changed" || fields.message == "diffusion.forward_chain.new_tip" {
+        // Check 'tip' (old) or 'point' (new)
+        let Some(val) = fields.tip.or(fields.point) else {
+            return None;
+        };
+        // Format is "SLOT.HASH"
+        let Some(slot_str) = val.split('.').next() else {
+            return None;
+        };
         return slot_str.parse::<u64>().ok();
     }
     None
@@ -234,11 +255,20 @@ pub fn extract_tip_changed(line: &str) -> Option<u64> {
 
 pub fn extract_new_tip(line: &str) -> Option<u64> {
     let entry = extract_json(line)?;
-    if let Some(fields) = entry.fields
-        && fields.message == "new tip"
-        && let Some(point) = fields.point
-        && let Some(slot_str) = point.split('.').next()
-    {
+    let Some(fields) = entry.fields else {
+        return None;
+    };
+    // Handles old "new tip" message and new
+    // "track_peers.caught_up.new_tip" mesage
+    if fields.message == "new tip" || fields.message == "track_peers.caught_up.new_tip" {
+        // Both messages use 'point'
+        let Some(val) = fields.point else {
+            return None;
+        };
+        // Format is "SLOT.HASH"
+        let Some(slot_str) = val.split('.').next() else {
+            return None;
+        };
         return slot_str.parse::<u64>().ok();
     }
     None

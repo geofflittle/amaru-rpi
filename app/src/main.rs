@@ -1,4 +1,4 @@
-use amaru_pi::cli;
+use amaru_pi::{cli, migrations};
 use std::{error::Error, io};
 use tracing_subscriber::EnvFilter;
 
@@ -11,5 +11,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         )
         .with_writer(io::stderr)
         .init();
+    migrations::run_all();
     cli::handle().await
 }

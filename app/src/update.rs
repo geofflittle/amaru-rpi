@@ -9,12 +9,16 @@ const STATE_FILE_PATH: &str = "/home/pi/.amaru_update_state.json";
 const UPDATE_TRIGGER_PATH: &str = "/home/pi/.update_requested";
 const SNOOZE_DURATION_SECS: u64 = 48 * 60 * 60; // 48 hours
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct AppUpdateState {
     #[serde(default)]
     pub current_version: String,
     #[serde(default)]
+    pub current_source: String,
+    #[serde(default)]
     pub pending_version: String,
+    #[serde(default)]
+    pub pending_source: String,
     #[serde(default)]
     pub staged_path: String,
 }

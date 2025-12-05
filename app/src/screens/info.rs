@@ -46,7 +46,9 @@ impl Screen for InfoScreen {
             lines.push(Line::from(" APPLICATION VERSIONS ").centered());
             lines.push(Line::from("").centered());
 
-            for (app_name, app_state) in &self.state.applications {
+            let mut sorted_apps: Vec<_> = self.state.applications.iter().collect();
+            sorted_apps.sort();
+            for (app_name, app_state) in sorted_apps {
                 lines.push(Line::from(vec![
                     Span::raw("  App:      "),
                     Span::styled(app_name, Style::default().fg(Color::Cyan)),
@@ -58,6 +60,15 @@ impl Screen for InfoScreen {
                         Style::default().fg(Color::Green),
                     ),
                 ]));
+                if !app_state.current_source.is_empty() {
+                    lines.push(Line::from(vec![
+                        Span::raw("  Source:   "),
+                        Span::styled(
+                            &app_state.current_source,
+                            Style::default().fg(Color::DarkGray),
+                        ),
+                    ]));
+                }
                 if !app_state.pending_version.is_empty() {
                     lines.push(Line::from(vec![
                         Span::raw("  Pending:  "),
