@@ -6,6 +6,7 @@ pub mod cli;
 pub mod frame;
 pub mod keyboard;
 pub mod logs;
+pub mod migrations;
 pub mod modal;
 pub mod network_status;
 pub mod screen_flow;

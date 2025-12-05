@@ -24,13 +24,12 @@ jobs:
           toolchain: stable
           override: true
       
-      - name: Install Linker
-        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
+      - name: Install AArch64 Dependencies
+        uses: ./.github/actions/install-aarch64-deps
 
-      - name: Cache Rust Dependencies
-        uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2
         with:
-          working-directory: app
+            workspaces: "app"
 
       - name: Build Binary
         run: cd app && make build
@@ -54,3 +53,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           generateReleaseNotes: true
           immutableCreate: true
+          makeLatest: true

@@ -25,11 +25,7 @@ jobs:
         environments:
           - runner: ubuntu-latest
             title: ubuntu/aarch64-gnu
-            setup: |
-              sudo apt-get update -y
-              sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu \
-                binutils-aarch64-linux-gnu pkg-config cmake make
-              rustup target add aarch64-unknown-linux-gnu
+            setup: '' 
 
           - runner: macos-latest
             title: MacOS/aarch64-gnu
@@ -62,6 +58,10 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ matrix.environments.title }}
           restore-keys: |
             ${{ runner.os }}-cargo-
+
+      - name: Install AArch64 Dependencies (Linux)
+        if: ${{ matrix.environments.runner == 'ubuntu-latest' }}
+        uses: ./.github/actions/install-aarch64-deps
 
       - name: Environment setup (matrix)
         if: ${{ matrix.environments.setup != '' }}
