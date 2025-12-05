@@ -7,6 +7,7 @@ use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::style::Stylize;
 use ratatui::text::Line;
 use std::time::{Duration, Instant};
+use tracing::debug;
 use tui_big_text::{BigText, PixelSize};
 
 pub struct TipScreen {
@@ -64,11 +65,16 @@ impl crate::screens::Screen for TipScreen {
         if now - self.last_refresh > Duration::from_secs(1) {
             self.last_refresh = now;
             let lines = self.reader.next_lines().unwrap_or_default();
+            if !lines.is_empty() {
+                debug!("TipScreen::update read {} log lines", lines.len());
+            }
+
             let new_tips: Vec<_> = lines
                 .iter()
                 .flat_map(|line| extract_new_tip(line))
                 .collect();
             if let Some(tip) = new_tips.last() {
+                debug!("Found 'new tip' update: {}", tip);
                 // Set to last tip collected
                 self.update_slot(((*tip).into(), true));
             } else {
@@ -77,6 +83,7 @@ impl crate::screens::Screen for TipScreen {
                     .flat_map(|line| extract_tip_changed(line))
                     .collect();
                 if let Some(tip) = tips.last() {
+                    debug!("Found 'tip_changed' update: {}", tip);
                     // Set to last tip collected
                     self.update_slot(((*tip).into(), false));
                 }
