@@ -101,7 +101,10 @@ impl App {
             }
             AppEvent::Input(event) => {
                 // If a modal is active, it handles the input
-                if self.modal.handle_input(event, &mut self.update_manager) {
+                if self
+                    .modal
+                    .handle_input(event.clone(), &mut self.update_manager)
+                {
                     // The modal handled it, don't process further
                     return Vec::new();
                 }

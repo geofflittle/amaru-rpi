@@ -1,3 +1,4 @@
+use crossterm::event::KeyEvent;
 use std::time::{Duration, Instant};
 
 const DEBOUNCE: Duration = Duration::from_millis(50);
@@ -21,11 +22,15 @@ pub enum ButtonPress {
     Double,
 }
 
-/// The button pressed and the type of press
-#[derive(Debug, Clone, Copy)]
-pub struct InputEvent {
-    pub id: ButtonId,
-    pub press_type: ButtonPress,
+#[derive(Debug, Clone)]
+pub enum InputEvent {
+    /// Physical button press from the HAT (GPIO)
+    Button {
+        id: ButtonId,
+        press_type: ButtonPress,
+    },
+    /// Keyboard event from USB
+    Key(KeyEvent),
 }
 
 pub struct Button {

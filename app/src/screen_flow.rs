@@ -129,20 +129,27 @@ impl ScreenFlow {
     pub fn handle_input(&mut self, event: InputEvent) -> bool {
         let handled = {
             let current_screen = self.screen_mut(self.current_screen_kind);
-            current_screen.handle_input(event)
+            current_screen.handle_input(event.clone())
         };
-        if !handled {
-            // Only deal with input if screen hasn't captured it
-            match (event.id, event.press_type) {
-                (ButtonId::Y, ButtonPress::Short) => {
-                    self.update_screen(self.next_kind(self.current_screen_kind));
-                }
-                (ButtonId::B, ButtonPress::Short) => {
-                    self.update_screen(self.previous_kind(self.current_screen_kind));
-                }
-                // Ignore other press types
-                _ => (),
+
+        if handled {
+            return true;
+        }
+        // Only deal with input if screen hasn't captured it
+
+        let InputEvent::Button { id, press_type } = event else {
+            return handled;
+        };
+
+        match (id, press_type) {
+            (ButtonId::Y, ButtonPress::Short) => {
+                self.update_screen(self.next_kind(self.current_screen_kind));
             }
+            (ButtonId::B, ButtonPress::Short) => {
+                self.update_screen(self.previous_kind(self.current_screen_kind));
+            }
+            // Ignore other press types
+            _ => (),
         }
         handled
     }

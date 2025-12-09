@@ -1,3 +1,5 @@
+use crossterm::event::KeyCode;
+
 use super::{KeyboardAction, KeyboardMode, KeyboardWidget};
 use crate::button::{ButtonId, ButtonPress, InputEvent};
 use crate::keyboard::layout::KEYBOARD_LAYOUT;
@@ -7,54 +9,68 @@ impl KeyboardWidget {
     pub fn handle_input(&mut self, event: InputEvent) -> Option<KeyboardAction> {
         let max_row = KEYBOARD_LAYOUT.len() - 1;
 
-        match (event.id, event.press_type) {
+        match event {
             // In the keyboard, A/B/X/Y are for nav, AA for key press, BB for backspace
-            (ButtonId::A, ButtonPress::Short) => {
-                let max_col = KEYBOARD_LAYOUT[self.cursor.0].len() - 1;
-                if self.cursor.1 < max_col {
-                    self.cursor.1 += 1;
-                } else {
-                    self.cursor.1 = 0;
-                }
-            }
-            (ButtonId::B, ButtonPress::Short) => {
-                if self.cursor.1 > 0 {
-                    self.cursor.1 -= 1;
-                } else {
-                    // The cursor is at col 0, wrap around
+            InputEvent::Button { id, press_type } => match (id, press_type) {
+                (ButtonId::A, ButtonPress::Short) => {
                     let max_col = KEYBOARD_LAYOUT[self.cursor.0].len() - 1;
-                    self.cursor.1 = max_col;
+                    if self.cursor.1 < max_col {
+                        self.cursor.1 += 1;
+                    } else {
+                        self.cursor.1 = 0;
+                    }
+                    None
                 }
-            }
-            (ButtonId::X, ButtonPress::Short) => {
-                if self.cursor.0 > 0 {
-                    self.cursor.0 -= 1;
-                    self.clamp_cursor_col();
+                (ButtonId::B, ButtonPress::Short) => {
+                    if self.cursor.1 > 0 {
+                        self.cursor.1 -= 1;
+                    } else {
+                        // The cursor is at col 0, wrap around
+                        let max_col = KEYBOARD_LAYOUT[self.cursor.0].len() - 1;
+                        self.cursor.1 = max_col;
+                    }
+                    None
                 }
-            }
-            (ButtonId::Y, ButtonPress::Short) => {
-                if self.cursor.0 < max_row {
-                    self.cursor.0 += 1;
-                    self.clamp_cursor_col();
+                (ButtonId::X, ButtonPress::Short) => {
+                    if self.cursor.0 > 0 {
+                        self.cursor.0 -= 1;
+                        self.clamp_cursor_col();
+                    }
+                    None
                 }
-            }
-            (ButtonId::A, ButtonPress::Double) => return self.press_key(),
-            (ButtonId::B, ButtonPress::Double) => return Some(KeyboardAction::Backspace),
-            (ButtonId::X, ButtonPress::Double) => {
-                if self.cursor.0 > 1 {
-                    self.cursor.0 -= 2;
-                    self.clamp_cursor_col();
+                (ButtonId::Y, ButtonPress::Short) => {
+                    if self.cursor.0 < max_row {
+                        self.cursor.0 += 1;
+                        self.clamp_cursor_col();
+                    }
+                    None
                 }
-            }
-            (ButtonId::Y, ButtonPress::Double) => {
-                if self.cursor.0 < max_row - 1 {
-                    self.cursor.0 += 2;
-                    self.clamp_cursor_col();
+                (ButtonId::A, ButtonPress::Double) => self.press_key(),
+                (ButtonId::B, ButtonPress::Double) => Some(KeyboardAction::Backspace),
+                (ButtonId::X, ButtonPress::Double) => {
+                    if self.cursor.0 > 1 {
+                        self.cursor.0 -= 2;
+                        self.clamp_cursor_col();
+                    }
+                    None
                 }
-            }
-            _ => { /* Ignore other presses */ }
+                (ButtonId::Y, ButtonPress::Double) => {
+                    if self.cursor.0 < max_row - 1 {
+                        self.cursor.0 += 2;
+                        self.clamp_cursor_col();
+                    }
+                    None
+                }
+                _ => None,
+            },
+            InputEvent::Key(key_event) => match key_event.code {
+                KeyCode::Char(' ') => Some(KeyboardAction::Space),
+                KeyCode::Char(c) => Some(KeyboardAction::KeyPress(c.to_string())),
+                KeyCode::Backspace => Some(KeyboardAction::Backspace),
+                KeyCode::Enter | KeyCode::Esc => Some(KeyboardAction::Exit),
+                _ => None,
+            },
         }
-        None
     }
 
     /// Checks if the cursor is at the far-right key of the current row.

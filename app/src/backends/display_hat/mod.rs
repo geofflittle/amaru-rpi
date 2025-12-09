@@ -11,7 +11,7 @@ use rppal::gpio::{Gpio, OutputPin};
 use rppal::hal::Delay;
 use rppal::spi::{Bus, Mode, SlaveSelect, Spi};
 use std::collections::HashMap;
-use std::sync::mpsc::Receiver;
+use std::sync::mpsc::Sender;
 
 pub mod input;
 
@@ -43,10 +43,7 @@ impl embedded_hal::digital::ErrorType for NoCs {
 type EbSpi = SpiInterface<'static, ExclusiveDevice<Spi, NoCs, NoDelay>, OutputPin>;
 
 /// Initializes the display, GPIO, and the input handler thread.
-pub fn setup_hardware_and_input() -> Result<(
-    Backend<Display<EbSpi, ST7789, NoResetPin>>,
-    Receiver<InputEvent>,
-)> {
+pub fn setup(tx: Sender<InputEvent>) -> Result<Backend<Display<EbSpi, ST7789, NoResetPin>>> {
     println!("Setting up display_hat hardware and input");
     let gpio = Gpio::new()?;
     let dc = gpio.get(SPI_DC)?.into_output();
@@ -58,7 +55,7 @@ pub fn setup_hardware_and_input() -> Result<(
     pin_map.insert(ButtonId::B, gpio.get(BUTTON_B)?.into_input_pullup());
     pin_map.insert(ButtonId::X, gpio.get(BUTTON_X)?.into_input_pullup());
     pin_map.insert(ButtonId::Y, gpio.get(BUTTON_Y)?.into_input_pullup());
-    let input_event_receiver = input::InputHandler::spawn(pin_map)?;
+    input::InputHandler::spawn(pin_map, tx)?;
 
     let mut led_r = gpio.get(LED_R)?.into_output();
     let mut led_g = gpio.get(LED_G)?.into_output();
@@ -90,5 +87,5 @@ pub fn setup_hardware_and_input() -> Result<(
     };
     let backend = EmbeddedBackend::new(Box::leak(Box::new(display)), backend_config);
 
-    Ok((backend, input_event_receiver))
+    Ok(backend)
 }

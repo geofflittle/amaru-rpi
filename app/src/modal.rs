@@ -17,18 +17,20 @@ impl Modal {
         match self {
             Modal::None => false, // Not handled
             Modal::UpdatePopup(_) => {
-                match (event.id, event.press_type) {
-                    (ButtonId::A, ButtonPress::Short) => {
-                        println!("Received update request");
-                        UpdateManager::request_update().ok();
-                        *self = Modal::None; // Close the modal
+                if let InputEvent::Button { id, press_type } = event {
+                    match (id, press_type) {
+                        (ButtonId::A, ButtonPress::Short) => {
+                            println!("Received update request");
+                            UpdateManager::request_update().ok();
+                            *self = Modal::None; // Close the modal
+                        }
+                        (ButtonId::B, ButtonPress::Short) => {
+                            println!("Received snooze request");
+                            update_manager.snooze().ok();
+                            *self = Modal::None; // Close the modal
+                        }
+                        _ => {}
                     }
-                    (ButtonId::B, ButtonPress::Short) => {
-                        println!("Received snooze request");
-                        update_manager.snooze().ok();
-                        *self = Modal::None; // Close the modal
-                    }
-                    _ => {}
                 }
                 true // Handled
             }

@@ -4,7 +4,12 @@ use crate::keyboard::{KeyboardAction, KeyboardContext};
 
 impl WiFiSettingsScreen {
     pub fn handle_field_navigation(&mut self, event: InputEvent) -> bool {
-        match (event.id, event.press_type) {
+        let (id, press_type) = match event {
+            InputEvent::Button { id, press_type } => (id, press_type),
+            _ => return false,
+        };
+
+        match (id, press_type) {
             // A cycles backward through the fields
             (ButtonId::A, ButtonPress::Short) => {
                 self.active_field = match self.active_field {
@@ -64,7 +69,7 @@ impl WiFiSettingsScreen {
 
     pub fn handle_popup_input(&mut self, event: InputEvent) -> bool {
         // Any short press dismisses the popup
-        if let InputEvent {
+        if let InputEvent::Button {
             press_type: ButtonPress::Short,
             ..
         } = event

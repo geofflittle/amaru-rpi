@@ -4,6 +4,7 @@ pub mod backends;
 pub mod button;
 pub mod cli;
 pub mod frame;
+pub mod inputs;
 pub mod keyboard;
 pub mod logs;
 pub mod migrations;
